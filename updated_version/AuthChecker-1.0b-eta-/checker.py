@@ -1,8 +1,6 @@
 import os
-import sys
 import threading
 import datetime
-from datetime import datetime
 import time
 import requests
 from bs4 import BeautifulSoup
@@ -10,13 +8,7 @@ import re
 import math
 import pickle
 from collections import Counter
-import zipfile
 
-from updater import Updater
-from logger import Logger
-from dashboard import PrettyTableDashboard, HTMLDashboard
-
-current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def get_input(self, message, color="purple"):
     return input(self.color(f"➜ {message}", color))
@@ -33,7 +25,6 @@ class AuthChecker:
         log_thread = threading.Thread(target=self.background_logger)
         log_thread.daemon = True  # This makes sure the thread will die when the main program dies
         log_thread.start()
-        self.log_data = []
         
 
 
@@ -71,21 +62,6 @@ class AuthChecker:
             self.clear()
             self.menu()
 
-
-    def save_scan(self, scan_type, result, url):
-        # Check if logs directory exists, if not create one
-        if not os.path.exists('logs'):
-            os.makedirs('logs')
-
-        # Get current date
-        current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # The name of the log file can be based on the current date for daily logs or the target URL for URL specific logs
-        log_file_name = os.path.join('logs', datetime.now().strftime('%Y-%m-%d') + '.txt')
-        
-        # Append scan data to the log file
-        with open(log_file_name, 'a') as f:
-            f.write(f"{current_date} | Type: {scan_type} | Result: {result} | URL: {url}\n")
 
 
 #--------------------------------------------
@@ -176,11 +152,10 @@ class AuthChecker:
                 print(self.color("[DETAIL] Method: " + form.get('method'), "blue"))
                 for input_field in inputs:
                     print(self.color("[DETAIL] Input field name: " + input_field.get('name', "N/A"), "blue"))
-                    self.save_scan(scan_type="Login Page Checker", result="Login form detected", url=self.url)
                 break
+            self.logs.append("Login form detected: " + self.url + "/n" + "Action URL: " + form.get('action') + "/n" + "Method: " + form.get('method') + "/n" + "Input field name: " + input_field.get('name', "N/A"))
         if not login_form_detected:
             print(self.color("[INFO] No login form detected on the provided page.", "red"))
-            self.save_scan(scan_type="Login Page Checker", result="No login form detected", url=self.url)
         input(self.color("\nPress Enter to return to the main menu...", "blue"))
         self.clear()
         self.menu()
@@ -228,10 +203,11 @@ class AuthChecker:
                 response = self.session.post(self.url, data=form_parameters)
                 if response.status_code == 200:
                     print(self.color(f"[ALERT] Brute force attack successful! Username: {username}, Password: {password}", "red"))
-                    self.save_scan(scan_type="Brute Force Attack Simulation", result=f"Username: {username}, Password: {password}", url=self.url)
+                    self.logs.append("Brute force attack successful! Username: " + username + " Password: " + password + " @ " + self.url)
                     return
                 else:
                     print(self.color(f"[INFO] Login failed for username: {username}, password: {password}", "blue"))
+                    self.logs.append("Login failed for username: " + username + " Password: " + password + " @ " + self.url)
         print(self.color("[INFO] Brute force attack unsuccessful. Password list exhausted.", "blue"))
         input(self.color("\nPress Enter to return to the main menu...", "blue"))
         self.clear()
@@ -265,13 +241,12 @@ class AuthChecker:
 
         if detected_policies:
             print(self.color("[INFO] Detected Password Policies:", "blue"))
-            self.save_scan(scan_type="Password Policy Check", result=f"Detected Password Policies: {detected_policies}", url=self.url)
             for policy in detected_policies:
                 print(self.color(f"- {policy}", "green"))
                 #log the detected policies
+                self.logs.append("Detected Password Policies: " + policy + " @ " + self.url)
         else:
             print(self.color("[WARNING] No specific password policies detected. The site may have a generic policy or none at all.", "yellow"))
-            self.save_scan(scan_type="Password Policy Check", result="No specific password policies detected", url=self.url)
         input(self.color("\nPress Enter to return to the main menu...", "blue"))
         self.clear()
         self.menu()
@@ -302,7 +277,6 @@ class AuthChecker:
         # Check if we have both username and password fields
         if not (self.username in form_parameters.values() and self.password in form_parameters.values()):
             print(self.color("[ERROR] Could not detect the username and/or password fields.", "red"))
-            self.save_scan(scan_type="Session Fixation Check", result="Could not detect the username and/or password fields", url=self.url)
             return
 
         # Simulate login using extracted form parameters
@@ -314,7 +288,7 @@ class AuthChecker:
         # Check if session ID changed
         if initial_session_id and post_login_session_id and initial_session_id == post_login_session_id:
             print(self.color("[WARNING] Session Fixation vulnerability detected. Session ID does not change post authentication.", "yellow"))
-            self.save_scan(scan_type="Session Fixation Check", result="Session Fixation vulnerability detected.", url=self.url)
+            self.logs.append("Session Fixation vulnerability detected" + initial_session_id + " @ " + self.url)
         else:
             print(self.color("[INFO] Session ID changes post authentication. Not vulnerable to session fixation.", "green"))
         input(self.color("\nPress Enter to return to the main menu...", "blue"))
@@ -365,7 +339,7 @@ class AuthChecker:
         # This is a basic check and may need to be adjusted based on the application's response.
         if response.status_code == 200:
             print(self.color("[WARNING] Session token did not timeout. This might be a security concern.", "yellow"))
-            self.save_scan(scan_type="Session Timeout Check", result="Session token did not timeout", url=self.url)
+            self.logs.append("Session token did not timeout" + initial_session_id + " @ " + self.url)
         else:
             print(self.color("[INFO] Session token seems to have timed out as expected.", "green"))
         input(self.color("\nPress Enter to return to the main menu...", "blue"))
@@ -415,14 +389,11 @@ class AuthChecker:
             print(self.color("[ALERT] Tokens might have predictability issues!", "red"))
             if entropy <= 3.5:
                 print(self.color(f"[DETAIL] Entropy: {entropy} (should be > 3.5)", "red"))
-                self.save_scan(scan_type="Token Predictability Check", result=f"Entropy: {entropy} (should be > 3.5)", url=self.url)
             if token_length_issue:
                 print(self.color(f"[DETAIL] Average token length: {average_length} (should be > 20)", "red"))
-                self.save_scan(scan_type="Token Predictability Check", result=f"Average token length: {average_length} (should be > 20)", url=self.url)
             if char_dist_issue:
                 print(self.color(f"[DETAIL] Character distribution: {char_distribution}", "red"))
-                self.save_scan(scan_type="Token Predictability Check", result=f"Character distribution: {char_distribution}", url=self.url)
-            
+        self.logs.append("Token predictability check" + entropy + " @ " + self.url)
         input(self.color("\nPress Enter to return to the main menu...", "blue"))
         self.clear()
         self.menu()
@@ -466,7 +437,7 @@ class AuthChecker:
 
         if "email does not exist" in post_response.content.decode().lower():
             print(self.color("[ALERT] The application discloses whether an email exists in its database!", "red"))
-            self.save_scan(scan_type="Insecure Password Recovery Check", result="The application discloses whether an email exists in its database", url=self.url)
+            self.logs.append("The application discloses whether an email exists in its database!" + " @ " + self.url)
         print(self.color("[INFO] Password recovery checks completed.", "blue"))
         input(self.color("\nPress Enter to return to the main menu...", "blue"))
         self.clear()
@@ -488,33 +459,7 @@ class AuthChecker:
         print(self.color("[INFO] Checks completed.", "blue"))
   
 #--------------------------------------------
-    def display_dashboard(self):
-        print("\nChoose your preferred dashboard type:")
 
-        print("[1] PrettyTable Dashboard")
-        print("[2] HTML Browser-based Dashboard")
-        choice = input("\nEnter your choice (1/2): ").strip()
-
-        if choice == "1":
-            from dashboard import PrettyTableDashboard
-            dashboard_pt = PrettyTableDashboard(self.log_data)
-            dashboard_pt.display()
-        elif choice == "2":
-            from dashboard import HTMLDashboard
-            dashboard_html = HTMLDashboard(self.log_data)
-            dashboard_html.display_in_browser()
-        else:
-            print("[ERROR] ❌ Invalid choice!")
-#--------------------------------------------
-    # check for updates
-    def check_for_updates(self):
-        print(self.color("[INFO] Checking for updates...", "blue"))
-        Updater.check_for_updates()
-        print(self.color("[INFO] Updates check completed.", "blue"))
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
-        self.clear()
-        self.menu()
-#--------------------------------------------
     def info(self):
         self.clear()
         print(self.color("════════════════════════════════════════════════════════════════", "yellow"))
@@ -530,8 +475,8 @@ class AuthChecker:
         print("  ⭐ ", self.color("Session Timeout Check:", "blue"), "Inspect the reliability of session timeouts.")
         print("  ⭐ ", self.color("Token Predictability Check:", "blue"), "Quantify token security measures.")
         print("  ⭐ ", self.color("Insecure Password Recovery Check:", "blue"), "Identify potential weaknesses in password recovery mechanisms.")
-        print("  ⭐ ", self.color("Run All Checks:", "blue"), "Run all checks in one go!")
-        print("  ⭐ ", self.color("Dashboard:", "blue"), "View the results of your checks in a beautiful dashboard!")        
+        # ... add any other features you implement in the future
+        
         print("\n🌐 ", self.color("Connect With Us:", "green"))
         print("For the latest updates, collaboration opportunities, or to just drop a 'thank you', visit our GitHub repository or connect with us on Facebook or Linkedin. \nLet's make the web a safer place, together!")
         print(self.color("\n[INFO] Returning to main menu in 10 seconds...", "blue"))
@@ -554,49 +499,39 @@ class AuthChecker:
         print("  4️⃣ ", self.color("Session Fixation Check", "blue"))
         print("  5️⃣ ", self.color("Session Timeout Check", "blue"))
         print("  6️⃣ ", self.color("Token Predictability Check", "blue"))
-        print("  7️⃣ ", self.color("Insecure Password Recovery Check", "blue"))
-        print("  8️⃣ ", self.color("Run All Checks", "blue"))
-        print("  9️⃣ ", self.color("Display Dashboard", "blue"))
-        print("  🔟 ", self.color("Check for Updates", "blue"))
-        print("  0️⃣ ", self.color("Exit Program", "red"))
-        
+        print("  6️⃣ ", self.color("Insecure Password Recovery Check", "blue"))
+        print("  7️⃣ ", self.color("Run All Checks", "blue"))
+        print("  8️⃣ ", self.color("About AuthChecker", "blue"))
+        print("  9️⃣ ", self.color("Exit", "blue"))
         print("\n")
-        choice = input(self.color("Enter your choice (1-10 or 0): ", "red"))
-        return choice
-       
-        
+        return input(self.color("\nEnter your choice: ", "purple"))
+        self.run(choice)
+
     def run(self):
         while True:
             choice = self.menu()
             if choice == '1':
                 self.brute_force_attack_simulation()
             elif choice == '2':
-                self.check_login_page()
-            elif choice == '3':
                 self.password_policy_check()
-            elif choice == '4':
+            elif choice == '3':
                 self.session_fixation_check()
-            elif choice == '5':
+            elif choice == '4':
                 self.session_timeout_check()
-            elif choice == '6':
+            elif choice == '5':
                 self.token_predictability_check()
-            elif choice == '7':
+            elif choice == '6':
                 self.insecure_password_recovery_check()
-            elif choice == '8':
+            elif choice == '7':
                 self.run_checks()
+            elif choice == '8':
+                self.info()
             elif choice == '9':
-                self.display_dashboard()
-            elif choice == '10':
-                self.check_for_updates()
-            elif choice == '0':
-                print(self.color("\n[INFO] Exiting AuthChecker...", "blue"))
-                sys.exit(0)
+                print(self.color("Thank you for using AuthChecker. Goodbye!", "cyan"))
+                break
             else:
-                print(self.color("\n[ERROR] Invalid choice. Please try again.", "red"))
-                time.sleep(2)
-                self.clear()
-                self.menu()
-
+                print(self.color("Invalid choice. Please try again.", "red"))
+                continue
 
     def banner(self):
         print(self.color("════════════════════════════════════════════════════════════════", "yellow"))
@@ -619,7 +554,6 @@ class AuthChecker:
         
 if __name__ == "__main__":
     checker = AuthChecker()
-    checker.clear()
-    Updater.check_for_updates()
     checker.initialize_session()
+    checker.clear()
     checker.run()
