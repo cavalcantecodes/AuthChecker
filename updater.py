@@ -5,7 +5,7 @@ import zipfile
 
 class Updater:
     GITHUB_RELEASES_URL = "https://api.github.com/repos/cavalcantecodes/AuthChecker/releases/latest"
-    CURRENT_VERSION = '0.0.3'
+    CURRENT_VERSION = '0.3.0'
 
     @staticmethod
     def get_latest_version_tag():

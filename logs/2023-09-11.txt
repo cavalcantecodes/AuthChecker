@@ -1,0 +1,5 @@
+2023-09-11 20:58:10 | Type: Password Policy Check | Result: No specific password policies detected | URL: https://www.wwf.sg/learn/login/
+2023-09-11 21:00:26 | Type: Password Policy Check | Result: No specific password policies detected | URL: https://www.wwf.sg/learn/login/
+2023-09-11 21:04:48 | Type: Password Policy Check | Result: No specific password policies detected | URL: https://www.wwf.sg/learn/login/
+2023-09-11 21:05:05 | Type: Session Fixation Check | Result: Could not detect the username and/or password fields | URL: https://www.wwf.sg/learn/login/
+2023-09-11 21:06:37 | Type: Session Fixation Check | Result: Could not detect the username and/or password fields | URL: https://www.wwf.sg/learn/login/

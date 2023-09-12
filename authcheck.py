@@ -181,7 +181,7 @@ class AuthChecker:
         if not login_form_detected:
             print(self.color("[INFO] No login form detected on the provided page.", "red"))
             self.save_scan(scan_type="Login Page Checker", result="No login form detected", url=self.url)
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 #--------------------------------------------
@@ -233,7 +233,7 @@ class AuthChecker:
                 else:
                     print(self.color(f"[INFO] Login failed for username: {username}, password: {password}", "blue"))
         print(self.color("[INFO] Brute force attack unsuccessful. Password list exhausted.", "blue"))
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 
@@ -272,7 +272,7 @@ class AuthChecker:
         else:
             print(self.color("[WARNING] No specific password policies detected. The site may have a generic policy or none at all.", "yellow"))
             self.save_scan(scan_type="Password Policy Check", result="No specific password policies detected", url=self.url)
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 #--------------------------------------------
@@ -317,7 +317,7 @@ class AuthChecker:
             self.save_scan(scan_type="Session Fixation Check", result="Session Fixation vulnerability detected.", url=self.url)
         else:
             print(self.color("[INFO] Session ID changes post authentication. Not vulnerable to session fixation.", "green"))
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 #--------------------------------------------
@@ -368,7 +368,7 @@ class AuthChecker:
             self.save_scan(scan_type="Session Timeout Check", result="Session token did not timeout", url=self.url)
         else:
             print(self.color("[INFO] Session token seems to have timed out as expected.", "green"))
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 #--------------------------------------------
@@ -423,7 +423,7 @@ class AuthChecker:
                 print(self.color(f"[DETAIL] Character distribution: {char_distribution}", "red"))
                 self.save_scan(scan_type="Token Predictability Check", result=f"Character distribution: {char_distribution}", url=self.url)
             
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 
@@ -468,7 +468,7 @@ class AuthChecker:
             print(self.color("[ALERT] The application discloses whether an email exists in its database!", "red"))
             self.save_scan(scan_type="Insecure Password Recovery Check", result="The application discloses whether an email exists in its database", url=self.url)
         print(self.color("[INFO] Password recovery checks completed.", "blue"))
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 #--------------------------------------------
@@ -478,12 +478,12 @@ class AuthChecker:
         """
         print(self.color("[INFO] Starting checks...", "blue"))
                 # Run the individual functions
-        self.brute_force_attack_simulation(self.url)
-        self.password_policy_check(self.url)
-        self.session_fixation_check(self.url)
-        self.session_timeout_check(self.url)
-        self.token_predictability_check(self.url)
-        self.insecure_password_recovery_check(self.url)
+        self.brute_force_attack_simulation()
+        self.password_policy_check()
+        self.session_fixation_check()
+        self.session_timeout_check()
+        self.token_predictability_check()
+        self.insecure_password_recovery_check()
 
         print(self.color("[INFO] Checks completed.", "blue"))
   
@@ -511,7 +511,7 @@ class AuthChecker:
         print(self.color("[INFO] Checking for updates...", "blue"))
         Updater.check_for_updates()
         print(self.color("[INFO] Updates check completed.", "blue"))
-        input(self.color("\nPress Enter to return to the main menu...", "blue"))
+        time.sleep(10)
         self.clear()
         self.menu()
 #--------------------------------------------
